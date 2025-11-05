@@ -25,10 +25,40 @@
 ## Requirements
 
 - Windows 10/11 or Windows Server 2016+
-- Python 3.8+ (for development)
+- Python 3.8+ (automatically installed if needed)
 - Administrator privileges (for installation)
 
-## Quick Start
+## 🚀 One-Click Installation
+
+**The easiest way to install the agent - just copy and paste this into PowerShell:**
+
+```powershell
+# Run PowerShell as Administrator, then execute:
+iwr -useb https://raw.githubusercontent.com/effaaykhan/cybersentinel-windows-agent/main/install.ps1 | iex
+```
+
+This single command will:
+- ✅ Check and install Python if needed
+- ✅ Download the latest agent files
+- ✅ Install all dependencies automatically
+- ✅ Configure the agent interactively
+- ✅ Optionally install as Windows Service
+- ✅ Start the agent immediately
+
+**Interactive Setup:** The installer will ask for:
+- Server IP address (e.g., `192.168.1.100`)
+- Agent ID (auto-generated from computer name)
+- Agent Name (auto-generated from user/computer)
+- Whether to install as a Windows Service
+
+**Silent Installation:**
+```powershell
+iwr -useb https://raw.githubusercontent.com/effaaykhan/cybersentinel-windows-agent/main/install.ps1 | iex -ServerURL "http://192.168.1.100:8000/api/v1" -AgentID "WIN-001" -AgentName "MyComputer" -AsService -Silent
+```
+
+---
+
+## Alternative Installation Methods
 
 ### Option 1: Run from Source
 
