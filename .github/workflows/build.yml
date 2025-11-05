@@ -1,0 +1,143 @@
+name: Build Windows Agent
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  release:
+    types: [ created ]
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Cache pip packages
+      uses: actions/cache@v3
+      with:
+        path: ~\AppData\Local\pip\Cache
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        pip install pytest pytest-cov
+
+    - name: Run linting
+      run: |
+        pip install flake8
+        flake8 agent.py --max-line-length=120 --ignore=E501,W503
+
+    - name: Run tests
+      run: |
+        pytest tests/ -v --cov=. --cov-report=xml
+      continue-on-error: true
+
+    - name: Upload coverage
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./coverage.xml
+        flags: windows-agent
+
+  build-executable:
+    name: Build Standalone Executable
+    runs-on: windows-latest
+    needs: test
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        pip install -r requirements.txt
+        pip install pyinstaller
+
+    - name: Build executable
+      run: |
+        pyinstaller --onefile --noconsole --name CyberSentinelAgent agent.py
+
+    - name: Test executable exists
+      run: |
+        if (!(Test-Path "dist\CyberSentinelAgent.exe")) {
+          Write-Error "Executable not found!"
+          exit 1
+        }
+        Write-Host "Executable built successfully"
+
+    - name: Get file info
+      run: |
+        Get-Item dist\CyberSentinelAgent.exe | Format-List
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: CyberSentinelAgent-Windows
+        path: dist\CyberSentinelAgent.exe
+        retention-days: 30
+
+    - name: Create release asset
+      if: github.event_name == 'release'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: dist\CyberSentinelAgent.exe
+        asset_name: CyberSentinelAgent-v${{ github.event.release.tag_name }}.exe
+        asset_content_type: application/vnd.microsoft.portable-executable
+
+  code-quality:
+    name: Code Quality Check
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install quality tools
+      run: |
+        pip install bandit pylint safety
+
+    - name: Run Bandit security scan
+      run: |
+        bandit -r agent.py -f txt -o bandit-report.txt
+      continue-on-error: true
+
+    - name: Run Pylint
+      run: |
+        pylint agent.py --exit-zero --reports=y > pylint-report.txt
+
+    - name: Check dependencies for vulnerabilities
+      run: |
+        safety check --json --output safety-report.json
+      continue-on-error: true
+
+    - name: Upload reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: code-quality-reports
+        path: |
+          bandit-report.txt
+          pylint-report.txt
+          safety-report.json
+        retention-days: 30

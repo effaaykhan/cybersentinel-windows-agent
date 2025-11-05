@@ -1,6 +1,17 @@
 # CyberSentinel DLP - Windows Agent
 
-Enterprise endpoint DLP agent for Windows operating systems.
+🛡️ **Enterprise Data Loss Prevention Endpoint Agent for Windows**
+
+[![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-0078D4?logo=windows)](https://www.microsoft.com/windows)
+[![Python](https://img.shields.io/badge/python-3.8+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/effaaykhan/cybersentinel-windows-agent?style=social)](https://github.com/effaaykhan/cybersentinel-windows-agent/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/effaaykhan/cybersentinel-windows-agent)](https://github.com/effaaykhan/cybersentinel-windows-agent/issues)
+[![GitHub last commit](https://img.shields.io/github/last-commit/effaaykhan/cybersentinel-windows-agent)](https://github.com/effaaykhan/cybersentinel-windows-agent/commits/main)
+
+![Status](https://img.shields.io/badge/status-production--ready-brightgreen)
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Maintenance](https://img.shields.io/badge/maintenance-active-brightgreen)
 
 ## Features
 
