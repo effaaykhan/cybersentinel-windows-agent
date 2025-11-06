@@ -1,5 +1,28 @@
 # Building the CyberSentinel Windows Agent (C++)
 
+## 🚀 Quick Start: One-Click Installer
+
+**The easiest way to build and install the C++ agent:**
+
+```powershell
+# Run PowerShell as Administrator
+iwr -useb https://raw.githubusercontent.com/effaaykhan/cybersentinel-windows-agent/main/install-cpp.ps1 | iex
+```
+
+This automated installer handles everything:
+- Installs Git, CMake
+- Sets up vcpkg and dependencies
+- Builds the C++ agent
+- Configures and installs as service
+
+**Installation time:** ~10-15 minutes (dependency compilation on first run)
+
+---
+
+## Manual Build Instructions
+
+If you prefer to build manually or customize the build process:
+
 ## Prerequisites
 
 ### Required Software

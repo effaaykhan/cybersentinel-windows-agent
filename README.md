@@ -59,49 +59,51 @@
 
 ## 🚀 Quick Start
 
-### Option 1: C++ Version (High Performance)
+### Option 1: C++ Version (High Performance) ⚡
 
-**Build from source:**
+**One-Click Installation (Recommended):**
 
 ```powershell
-# Install vcpkg dependencies
-vcpkg install curl:x64-windows nlohmann-json:x64-windows
-
-# Clone repository
-git clone https://github.com/effaaykhan/cybersentinel-windows-agent.git
-cd cybersentinel-windows-agent
-
-# Build with CMake
-mkdir build && cd build
-cmake .. -DCMAKE_TOOLCHAIN_FILE="C:/path/to/vcpkg/scripts/buildsystems/vcpkg.cmake" -G "Visual Studio 17 2022"
-cmake --build . --config Release
-
-# Configure agent
-# Edit agent_config.json with your server URL
-
-# Install as service (using NSSM)
-nssm install CyberSentinelDLP "C:\path\to\build\bin\Release\CyberSentinelAgent.exe"
-nssm start CyberSentinelDLP
+# Run PowerShell as Administrator, then execute:
+iwr -useb https://raw.githubusercontent.com/effaaykhan/cybersentinel-windows-agent/main/install-cpp.ps1 | iex
 ```
 
-**See [BUILD.md](BUILD.md) for detailed build instructions.**
+**This automated installer will:**
+- ✅ Install Visual Studio Build Tools (if needed - requires user action)
+- ✅ Install Git, CMake automatically
+- ✅ Setup vcpkg and install dependencies (libcurl, nlohmann/json)
+- ✅ Download and build the C++ agent
+- ✅ Configure agent interactively
+- ✅ Optionally install as Windows Service
+- ✅ Start monitoring immediately
 
-### Option 2: Python Version (One-Click)
+**Installation takes ~10-15 minutes (mostly dependency compilation on first run)**
 
-**The easiest way to install - just copy and paste this into PowerShell:**
+**Silent Installation:**
+```powershell
+iwr -useb https://raw.githubusercontent.com/effaaykhan/cybersentinel-windows-agent/main/install-cpp.ps1 | iex -ServerURL "http://192.168.1.100:8000/api/v1" -AgentID "WIN-001" -AgentName "MyComputer" -AsService -Silent
+```
+
+**Manual Build:** See [BUILD.md](BUILD.md) for manual build instructions.
+
+### Option 2: Python Version (Quick Setup)
+
+**One-Click Installation:**
 
 ```powershell
 # Run PowerShell as Administrator, then execute:
 iwr -useb https://raw.githubusercontent.com/effaaykhan/cybersentinel-windows-agent/main/install.ps1 | iex
 ```
 
-**This one-click installer will:**
-- ✅ Check and install Python if needed
-- ✅ Download the latest agent files
-- ✅ Install all dependencies automatically
-- ✅ Configure the agent interactively
-- ✅ Optionally install as Windows Service
-- ✅ Start the agent immediately
+**This installer will:**
+- ✅ Install Python if needed
+- ✅ Download agent files
+- ✅ Install dependencies
+- ✅ Configure interactively
+- ✅ Install as Windows Service
+- ✅ Start monitoring
+
+**Installation takes ~2-3 minutes**
 
 ---
 
