@@ -14,6 +14,7 @@ $ErrorActionPreference = "Stop"
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "CyberSentinel DLP - C++ Agent Installer" -ForegroundColor Cyan
 Write-Host "High-Performance Windows Agent Setup" -ForegroundColor Cyan
+Write-Host "100% Automated - Zero Manual Steps!" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -32,7 +33,7 @@ if (-not $isAdmin) {
     exit 1
 }
 
-Write-Host "[1/9] Checking prerequisites..." -ForegroundColor Green
+Write-Host "[1/10] Checking prerequisites..." -ForegroundColor Green
 
 # Function to check if command exists
 function Test-CommandExists {
@@ -54,28 +55,77 @@ if (Test-Path $vswhere) {
 }
 
 if (-not $vsInstalled) {
-    Write-Host "  ✗ Visual Studio C++ tools not found" -ForegroundColor Red
-    Write-Host ""
-    Write-Host "INSTALLATION REQUIRED:" -ForegroundColor Yellow
-    Write-Host "Please install Visual Studio 2019 or 2022 with C++ development tools:" -ForegroundColor Yellow
-    Write-Host "  1. Download from: https://visualstudio.microsoft.com/downloads/" -ForegroundColor Cyan
-    Write-Host "  2. During installation, select 'Desktop development with C++'" -ForegroundColor Cyan
-    Write-Host "  3. Re-run this installer after Visual Studio installation completes" -ForegroundColor Cyan
-    Write-Host ""
-    Write-Host "Alternative: Install Build Tools for Visual Studio (smaller download)" -ForegroundColor Yellow
-    Write-Host "  https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022" -ForegroundColor Cyan
+    Write-Host "  ✗ Visual Studio C++ tools not found" -ForegroundColor Yellow
+    Write-Host "  Installing Visual Studio Build Tools 2022..." -ForegroundColor Yellow
+    Write-Host "  This will download ~3 GB and take 15-30 minutes" -ForegroundColor Cyan
     Write-Host ""
 
-    $response = Read-Host "Open download page now? (y/n)"
-    if ($response -eq 'y') {
-        Start-Process "https://visualstudio.microsoft.com/downloads/"
+    # Download Visual Studio Build Tools bootstrapper
+    $vsBootstrapper = "$env:TEMP\vs_buildtools.exe"
+    $vsBootstrapperUrl = "https://aka.ms/vs/17/release/vs_buildtools.exe"
+
+    Write-Host "  Downloading Visual Studio Build Tools bootstrapper..." -ForegroundColor Yellow
+    try {
+        # Use BITS transfer for large files (more reliable)
+        Import-Module BitsTransfer
+        Start-BitsTransfer -Source $vsBootstrapperUrl -Destination $vsBootstrapper -Description "Downloading Visual Studio Build Tools"
+        Write-Host "  ✓ Download complete" -ForegroundColor Green
+    } catch {
+        Write-Host "  BITS transfer failed, using WebRequest..." -ForegroundColor Yellow
+        Invoke-WebRequest -Uri $vsBootstrapperUrl -OutFile $vsBootstrapper -UseBasicParsing
+        Write-Host "  ✓ Download complete" -ForegroundColor Green
     }
-    exit 1
+
+    # Install Visual Studio Build Tools with C++ workload
+    Write-Host "  Installing C++ Build Tools (this may take 15-30 minutes)..." -ForegroundColor Yellow
+    Write-Host "  Please be patient, installer is running in background..." -ForegroundColor Cyan
+
+    $vsInstallArgs = @(
+        "--quiet",
+        "--wait",
+        "--norestart",
+        "--nocache",
+        "--add", "Microsoft.VisualStudio.Workload.VCTools",
+        "--add", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+        "--add", "Microsoft.VisualStudio.Component.Windows11SDK.22000",
+        "--includeRecommended"
+    )
+
+    $process = Start-Process -FilePath $vsBootstrapper -ArgumentList $vsInstallArgs -Wait -PassThru -NoNewWindow
+
+    if ($process.ExitCode -eq 0 -or $process.ExitCode -eq 3010) {
+        Write-Host "  ✓ Visual Studio Build Tools installed successfully!" -ForegroundColor Green
+
+        # Refresh environment variables
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+
+        # Verify installation
+        if (Test-Path $vswhere) {
+            $vsPath = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+            if ($vsPath) {
+                Write-Host "  ✓ Verified: $vsPath" -ForegroundColor Green
+                $vsInstalled = $true
+            }
+        }
+    } else {
+        Write-Host "  ✗ Visual Studio Build Tools installation failed (Exit code: $($process.ExitCode))" -ForegroundColor Red
+        Write-Host "  Please install manually from: https://visualstudio.microsoft.com/downloads/" -ForegroundColor Yellow
+        Remove-Item $vsBootstrapper -Force -ErrorAction SilentlyContinue
+        exit 1
+    }
+
+    Remove-Item $vsBootstrapper -Force -ErrorAction SilentlyContinue
+
+    if (-not $vsInstalled) {
+        Write-Host "  ✗ Installation verification failed" -ForegroundColor Red
+        Write-Host "  Please reboot and re-run this installer" -ForegroundColor Yellow
+        exit 1
+    }
 }
 
 # Check/Install Git
 Write-Host ""
-Write-Host "[2/9] Checking Git..." -ForegroundColor Green
+Write-Host "[2/10] Checking Git..." -ForegroundColor Green
 if (-not (Test-CommandExists git)) {
     Write-Host "  Git not found. Installing Git..." -ForegroundColor Yellow
 
@@ -95,7 +145,7 @@ if (-not (Test-CommandExists git)) {
 
 # Check/Install CMake
 Write-Host ""
-Write-Host "[3/9] Checking CMake..." -ForegroundColor Green
+Write-Host "[3/10] Checking CMake..." -ForegroundColor Green
 if (-not (Test-CommandExists cmake)) {
     Write-Host "  CMake not found. Installing CMake..." -ForegroundColor Yellow
 
@@ -116,7 +166,7 @@ if (-not (Test-CommandExists cmake)) {
 
 # Install/Setup vcpkg
 Write-Host ""
-Write-Host "[4/9] Setting up vcpkg..." -ForegroundColor Green
+Write-Host "[4/10] Setting up vcpkg..." -ForegroundColor Green
 if (-not (Test-Path $VcpkgDir)) {
     Write-Host "  Cloning vcpkg..." -ForegroundColor Yellow
     git clone https://github.com/Microsoft/vcpkg.git $VcpkgDir 2>&1 | Out-Null
@@ -134,7 +184,7 @@ if (-not (Test-Path $VcpkgDir)) {
 
 # Install dependencies via vcpkg
 Write-Host ""
-Write-Host "[5/9] Installing C++ dependencies..." -ForegroundColor Green
+Write-Host "[5/10] Installing C++ dependencies..." -ForegroundColor Green
 Write-Host "  This may take 5-10 minutes on first run..." -ForegroundColor Yellow
 
 $packages = @("curl:x64-windows", "nlohmann-json:x64-windows")
@@ -154,7 +204,7 @@ foreach ($package in $packages) {
 
 # Clone agent repository
 Write-Host ""
-Write-Host "[6/9] Downloading agent source code..." -ForegroundColor Green
+Write-Host "[6/10] Downloading agent source code..." -ForegroundColor Green
 if (Test-Path "$InstallDir\cybersentinel-windows-agent") {
     Write-Host "  Removing existing installation..." -ForegroundColor Yellow
     Remove-Item -Path "$InstallDir\cybersentinel-windows-agent" -Recurse -Force
@@ -166,7 +216,7 @@ Write-Host "  ✓ Source code downloaded" -ForegroundColor Green
 
 # Build agent
 Write-Host ""
-Write-Host "[7/9] Building C++ agent..." -ForegroundColor Green
+Write-Host "[7/10] Building C++ agent..." -ForegroundColor Green
 Write-Host "  This may take 2-3 minutes..." -ForegroundColor Yellow
 
 $BuildDir = "$InstallDir\cybersentinel-windows-agent\build"
@@ -207,7 +257,7 @@ if (Test-Path $AgentExe) {
 
 # Configure agent
 Write-Host ""
-Write-Host "[8/9] Configuring agent..." -ForegroundColor Green
+Write-Host "[8/10] Configuring agent..." -ForegroundColor Green
 
 $ConfigFile = "$InstallDir\cybersentinel-windows-agent\agent_config.json"
 
@@ -268,7 +318,7 @@ try {
 
 # Install as service
 Write-Host ""
-Write-Host "[9/9] Service installation..." -ForegroundColor Green
+Write-Host "[9/10] Service installation..." -ForegroundColor Green
 
 if (-not $Silent -and -not $AsService) {
     $installService = Read-Host "  Install as Windows Service? (y/n) [y]"

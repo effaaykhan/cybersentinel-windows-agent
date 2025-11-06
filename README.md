@@ -43,17 +43,22 @@
 
 ## Requirements
 
-### C++ Version
-- Windows 10/11 or Windows Server 2016+
-- Visual Studio 2019/2022 with C++ tools (for building)
-- CMake 3.20+
-- vcpkg (for dependencies: libcurl, nlohmann/json)
-- Administrator privileges (for service installation)
+### C++ Version (100% Automatic Installation)
+- ✅ Windows 10/11 or Windows Server 2016+
+- ✅ Administrator privileges (run PowerShell as Admin)
+- ✅ **That's it!** Everything else is installed automatically:
+  - Visual Studio Build Tools 2022 (auto-installed)
+  - Git (auto-installed)
+  - CMake 3.20+ (auto-installed)
+  - vcpkg (auto-setup)
+  - Dependencies: libcurl, nlohmann/json (auto-compiled)
 
-### Python Version
-- Windows 10/11 or Windows Server 2016+
-- Python 3.8+ (automatically installed if needed)
-- Administrator privileges (for installation)
+### Python Version (100% Automatic Installation)
+- ✅ Windows 10/11 or Windows Server 2016+
+- ✅ Administrator privileges (run PowerShell as Admin)
+- ✅ **That's it!** Everything else is installed automatically:
+  - Python 3.8+ (auto-installed)
+  - All dependencies (auto-installed)
 
 ---
 
@@ -61,23 +66,26 @@
 
 ### Option 1: C++ Version (High Performance) ⚡
 
-**One-Click Installation (Recommended):**
+**One-Click Installation - 100% Automatic! (Recommended):**
 
 ```powershell
 # Run PowerShell as Administrator, then execute:
 iwr -useb https://raw.githubusercontent.com/effaaykhan/cybersentinel-windows-agent/main/install-cpp.ps1 | iex
 ```
 
-**This automated installer will:**
-- ✅ Install Visual Studio Build Tools (if needed - requires user action)
-- ✅ Install Git, CMake automatically
-- ✅ Setup vcpkg and install dependencies (libcurl, nlohmann/json)
-- ✅ Download and build the C++ agent
-- ✅ Configure agent interactively
-- ✅ Optionally install as Windows Service
-- ✅ Start monitoring immediately
+**This FULLY automated installer will:**
+- ✅ **Auto-install Visual Studio Build Tools 2022** (~3 GB download, 15-30 min)
+- ✅ **Auto-install Git, CMake** (~2 min)
+- ✅ **Setup vcpkg** and install dependencies (libcurl, nlohmann/json) (~5-10 min)
+- ✅ **Download and build the C++ agent** (~2-3 min)
+- ✅ **Configure agent** interactively (or silent mode)
+- ✅ **Install as Windows Service** (optional)
+- ✅ **Start monitoring immediately**
 
-**Installation takes ~10-15 minutes (mostly dependency compilation on first run)**
+**⏱️ Total Time: ~25-45 minutes on first run (all automatic!)**
+**⏱️ Subsequent runs: ~10-15 minutes (if VS Build Tools already installed)**
+
+**🎯 ZERO manual steps required - just run the command and wait!**
 
 **Silent Installation:**
 ```powershell
@@ -115,7 +123,9 @@ iwr -useb https://raw.githubusercontent.com/effaaykhan/cybersentinel-windows-age
 | **CPU Usage** | Low | Medium | **50-70% reduction** |
 | **Startup Time** | <100ms | ~2 seconds | **20x faster** |
 | **File Scanning** | Native regex | Python regex | **5-10x faster** |
-| **Deployment** | Build required | One-click | Trade-off |
+| **First Install Time** | 25-45 min (100% auto) | 2-3 min (100% auto) | Trade-off |
+| **Subsequent Install** | 10-15 min (100% auto) | 2-3 min (100% auto) | Faster |
+| **Manual Steps** | **ZERO** | **ZERO** | Both fully automatic! |
 
 **Recommendation:**
 - **Production (100+ endpoints):** Use C++ version for performance

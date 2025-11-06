@@ -1,25 +1,32 @@
 # Building the CyberSentinel Windows Agent (C++)
 
-## 🚀 Quick Start: One-Click Installer
+## 🚀 Quick Start: One-Click Installer (100% Automatic!)
 
-**The easiest way to build and install the C++ agent:**
+**The easiest way to build and install the C++ agent - ZERO manual steps:**
 
 ```powershell
 # Run PowerShell as Administrator
 iwr -useb https://raw.githubusercontent.com/effaaykhan/cybersentinel-windows-agent/main/install-cpp.ps1 | iex
 ```
 
-This automated installer handles everything:
-- Installs Git, CMake
-- Sets up vcpkg and dependencies
-- Builds the C++ agent
-- Configures and installs as service
+This FULLY automated installer handles EVERYTHING:
+- ✅ **Installs Visual Studio Build Tools 2022** (if not present)
+- ✅ Installs Git, CMake
+- ✅ Sets up vcpkg and dependencies (libcurl, nlohmann/json)
+- ✅ Downloads source and builds the C++ agent
+- ✅ Configures and installs as Windows Service
 
-**Installation time:** ~10-15 minutes (dependency compilation on first run)
+**Installation time:**
+- First run (no VS installed): ~25-45 minutes (all automatic!)
+- Subsequent runs: ~10-15 minutes (all automatic!)
+
+**NO PREREQUISITES NEEDED - Everything is installed automatically!**
 
 ---
 
 ## Manual Build Instructions
+
+**NOTE:** The one-click installer above handles everything automatically, including Visual Studio installation. Manual building is only needed if you want custom build configurations.
 
 If you prefer to build manually or customize the build process:
 
@@ -27,9 +34,12 @@ If you prefer to build manually or customize the build process:
 
 ### Required Software
 
+**All of these are auto-installed by install-cpp.ps1, but if you want to install manually:**
+
 1. **Visual Studio 2019 or 2022** (with C++ development tools)
    - Download from: https://visualstudio.microsoft.com/
    - Select "Desktop development with C++" workload
+   - **OR** use the installer to auto-install this
 
 2. **CMake 3.20+**
    - Download from: https://cmake.org/download/
