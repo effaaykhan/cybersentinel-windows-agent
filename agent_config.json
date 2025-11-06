@@ -7,6 +7,8 @@
     "file_system": true,
     "clipboard": true,
     "usb_devices": true,
+    "network_uploads": true,
+    "browser_file_access": true,
     "monitored_paths": [
       "C:\\Users\\Public\\Documents",
       "C:\\Users\\%USERNAME%\\Documents",

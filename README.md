@@ -37,6 +37,9 @@
 - ✅ **File System Monitoring** - Real-time monitoring of file operations
 - ✅ **Clipboard Monitoring** - Detects sensitive data in clipboard
 - ✅ **USB Device Detection** - Alerts on USB device connections
+- ✅ **🆕 Browser Upload Detection** - Detects file uploads to Google Drive, OneDrive, Dropbox, etc.
+- ✅ **🆕 Network Traffic Analysis** - Monitors HTTP/HTTPS uploads in real-time
+- ✅ **🆕 Cloud Service Identification** - Identifies which cloud service files are uploaded to
 - ✅ **Automatic Classification** - Pattern-based sensitive data detection
 - ✅ **Real-time Reporting** - Sends events to central server
 - ✅ **Configurable Monitoring** - Customize paths and file types
@@ -145,6 +148,8 @@ Both C++ and Python versions use the same `agent_config.json` file:
     "file_system": true,
     "clipboard": true,
     "usb_devices": true,
+    "network_uploads": true,
+    "browser_file_access": true,
     "monitored_paths": [
       "C:\\Users\\Public\\Documents",
       "C:\\Users\\%USERNAME%\\Desktop"
@@ -152,6 +157,32 @@ Both C++ and Python versions use the same `agent_config.json` file:
   }
 }
 ```
+
+### Network Monitoring (Browser Uploads)
+
+**⚠️ Requires Administrator privileges and additional dependencies:**
+
+```powershell
+pip install scapy psutil
+```
+
+**Detected Cloud Services:**
+- ✅ Google Drive (drive.google.com)
+- ✅ Microsoft OneDrive (onedrive.live.com)
+- ✅ Dropbox (dropbox.com)
+- ✅ Box (box.com)
+- ✅ iCloud Drive (icloud.com)
+- ✅ MEGA (mega.nz)
+- ✅ AWS S3 (s3.amazonaws.com)
+- ✅ Azure Blob Storage (blob.core.windows.net)
+
+**How it works:**
+1. Monitors network packets for HTTP/HTTPS file uploads
+2. Detects multipart/form-data (file upload pattern)
+3. Identifies destination cloud service by domain
+4. Monitors browser processes accessing files
+5. Correlates file access with network activity
+6. Triggers alerts based on DLP policies
 
 ## Installation as Windows Service
 
@@ -197,6 +228,9 @@ nssm start CyberSentinelDLP
 | **File Moved** | File moved or renamed |
 | **Clipboard Copy** | Sensitive data copied to clipboard |
 | **USB Connected** | USB device plugged in |
+| **🆕 Cloud Upload** | File uploaded to Google Drive, OneDrive, Dropbox, etc. |
+| **🆕 Browser File Access** | Browser accessing sensitive files (potential upload) |
+| **🆕 Network File Transfer** | Files transferred over network |
 
 ## Sensitive Data Detection
 

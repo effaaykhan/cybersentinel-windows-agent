@@ -9,5 +9,9 @@ WMI==1.5.1
 # Utilities
 python-dateutil==2.8.2
 
+# Network monitoring (for browser upload detection)
+scapy==2.5.0
+psutil==5.9.6
+
 # For building executable
 pyinstaller==6.3.0

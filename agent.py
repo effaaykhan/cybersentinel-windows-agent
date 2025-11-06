@@ -24,6 +24,14 @@ import wmi
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler, FileSystemEvent
 
+# Import network monitoring (optional dependency)
+try:
+    from network_monitor import NetworkMonitor, ProcessFileMonitor
+    NETWORK_MONITORING_AVAILABLE = True
+except ImportError:
+    NETWORK_MONITORING_AVAILABLE = False
+    logging.warning("Network monitoring not available - install scapy and psutil for browser upload detection")
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -53,6 +61,8 @@ class AgentConfig:
                 "file_system": True,
                 "clipboard": True,
                 "usb_devices": True,
+                "network_uploads": True,
+                "browser_file_access": True,
                 "monitored_paths": [
                     str(Path.home() / "Documents"),
                     str(Path.home() / "Desktop"),
@@ -124,6 +134,8 @@ class DLPAgent:
         self.running = False
         self.observers = []
         self.last_clipboard = ""
+        self.network_monitor = None
+        self.process_monitor = None
 
         logger.info(f"Agent initialized: {self.agent_id}")
 
@@ -147,6 +159,23 @@ class DLPAgent:
         if self.config.get("monitoring", {}).get("usb_devices", True):
             threading.Thread(target=self.monitor_usb, daemon=True).start()
 
+        # Start network monitoring (browser uploads)
+        if NETWORK_MONITORING_AVAILABLE:
+            if self.config.get("monitoring", {}).get("network_uploads", True):
+                self.network_monitor = NetworkMonitor(callback=self.handle_network_event)
+                if self.network_monitor.start():
+                    logger.info("Network upload monitoring enabled - will detect Google Drive, OneDrive, etc.")
+                else:
+                    logger.warning("Network monitoring failed to start - run as Administrator")
+
+            if self.config.get("monitoring", {}).get("browser_file_access", True):
+                self.process_monitor = ProcessFileMonitor(callback=self.handle_browser_file_event)
+                if self.process_monitor.start():
+                    logger.info("Browser file access monitoring enabled")
+        else:
+            logger.warning("Network monitoring disabled - install: pip install scapy psutil")
+            logger.warning("Browser uploads to Google Drive, OneDrive will NOT be detected!")
+
         # Start heartbeat
         threading.Thread(target=self.heartbeat_loop, daemon=True).start()
 
@@ -166,6 +195,12 @@ class DLPAgent:
         for observer in self.observers:
             observer.stop()
             observer.join()
+
+        if self.network_monitor:
+            self.network_monitor.stop()
+        if self.process_monitor:
+            self.process_monitor.stop()
+
         logger.info("Agent stopped")
 
     def register_agent(self):
@@ -354,6 +389,104 @@ class DLPAgent:
 
         except Exception as e:
             logger.error(f"Error handling USB event: {e}")
+
+    def handle_network_event(self, event: Dict[str, Any]):
+        """Handle network upload event (Google Drive, OneDrive, etc.)"""
+        try:
+            event_type = event.get('event_type', 'network_upload')
+
+            if event_type == 'cloud_upload':
+                # Cloud service upload detected
+                service = event.get('service', 'Unknown Cloud Service')
+                host = event.get('host', '')
+
+                event_data = {
+                    "event_id": str(uuid.uuid4()),
+                    "event_type": "network",
+                    "event_subtype": "cloud_upload",
+                    "agent_id": self.agent_id,
+                    "source_type": "agent",
+                    "user_email": f"{os.getlogin()}@{socket.gethostname()}",
+                    "description": f"File upload detected to {service}",
+                    "severity": "high",
+                    "action": "alerted",
+                    "details": {
+                        "cloud_service": service,
+                        "destination_host": host,
+                        "dest_ip": event.get('dest_ip', ''),
+                        "detection_method": "network_traffic_analysis"
+                    },
+                    "timestamp": event.get('timestamp', datetime.utcnow().isoformat())
+                }
+
+                self.send_event(event_data)
+                logger.warning(f"🌐 CLOUD UPLOAD DETECTED: {service} ({host})")
+
+            elif event_type == 'network_upload':
+                # Generic file upload detected
+                filename = event.get('filename', 'unknown')
+
+                event_data = {
+                    "event_id": str(uuid.uuid4()),
+                    "event_type": "network",
+                    "event_subtype": "file_upload",
+                    "agent_id": self.agent_id,
+                    "source_type": "agent",
+                    "user_email": f"{os.getlogin()}@{socket.gethostname()}",
+                    "description": f"Network file upload: {filename}",
+                    "severity": "medium",
+                    "action": "logged",
+                    "details": {
+                        "filename": filename,
+                        "dest_ip": event.get('dest_ip', ''),
+                        "detection_method": "packet_inspection"
+                    },
+                    "timestamp": event.get('timestamp', datetime.utcnow().isoformat())
+                }
+
+                self.send_event(event_data)
+                logger.info(f"Network upload detected: {filename}")
+
+        except Exception as e:
+            logger.error(f"Error handling network event: {e}")
+
+    def handle_browser_file_event(self, event: Dict[str, Any]):
+        """Handle browser file access event"""
+        try:
+            process = event.get('process', 'unknown')
+            file_path = event.get('file_path', '')
+
+            # Classify file content
+            content = self._read_file_content(file_path, max_bytes=100000)
+            classification = self._classify_content(content)
+
+            # Only alert if sensitive data detected
+            if classification.get("labels"):
+                event_data = {
+                    "event_id": str(uuid.uuid4()),
+                    "event_type": "browser",
+                    "event_subtype": "file_access",
+                    "agent_id": self.agent_id,
+                    "source_type": "agent",
+                    "user_email": f"{os.getlogin()}@{socket.gethostname()}",
+                    "description": f"Browser accessing sensitive file: {Path(file_path).name}",
+                    "severity": classification.get("severity", "medium"),
+                    "action": "alerted",
+                    "file_path": file_path,
+                    "file_name": Path(file_path).name,
+                    "classification": classification,
+                    "details": {
+                        "browser_process": process,
+                        "detection_method": "process_file_handle"
+                    },
+                    "timestamp": event.get('timestamp', datetime.utcnow().isoformat())
+                }
+
+                self.send_event(event_data)
+                logger.warning(f"⚠️ Browser accessing sensitive file: {Path(file_path).name} (via {process})")
+
+        except Exception as e:
+            logger.error(f"Error handling browser file event: {e}")
 
     def _classify_content(self, content: str) -> Dict[str, Any]:
         """Classify content for sensitive data"""
