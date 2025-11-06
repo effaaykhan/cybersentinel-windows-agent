@@ -39,7 +39,7 @@ BOOL WINAPI console_ctrl_handler(DWORD ctrl_type) {
 
 int main(int argc, char* argv[]) {
     // Initialize logger
-    Logger::initialize("cybersentinel_agent.log");
+    Logger::init("cybersentinel_agent.log");
     Logger::info("=== CyberSentinel DLP Agent Starting ===");
 
     // Configuration file path
