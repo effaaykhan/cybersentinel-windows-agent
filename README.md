@@ -2,6 +2,8 @@
 
 🛡️ **Enterprise Data Loss Prevention Endpoint Agent for Windows**
 
+⚡ **NEW: High-Performance C++ Version Available!** - 5-10x faster, 80% less memory usage
+
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-0078D4?logo=windows)](https://www.microsoft.com/windows)
 [![Python](https://img.shields.io/badge/python-3.8+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
