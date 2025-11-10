@@ -21,6 +21,7 @@ import requests
 import win32clipboard
 import win32con
 import wmi
+import pythoncom
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler, FileSystemEvent
 
@@ -272,22 +273,60 @@ class DLPAgent:
             time.sleep(2)
 
     def monitor_usb(self):
-        """Monitor USB device connections"""
+        """Monitor USB device connections and disconnections"""
         logger.info("USB monitoring started")
-        c = wmi.WMI()
+        # Initialize COM for this thread (required for WMI)
+        pythoncom.CoInitialize()
+        try:
+            c = wmi.WMI()
+        except Exception as e:
+            logger.error(f"Failed to initialize WMI: {e}")
+            pythoncom.CoUninitialize()
+            return
 
-        # Track known devices
-        known_devices = set()
+        # Track currently connected devices (device_id -> device_name)
+        current_devices = {}
+        first_scan = True
 
         while self.running:
             try:
-                for usb in c.Win32_USBHub():
-                    device_id = usb.DeviceID
-                    if device_id not in known_devices:
-                        known_devices.add(device_id)
-                        self.handle_usb_event(usb.Name, device_id)
+                # Get currently connected USB devices
+                new_devices = {}
+                try:
+                    for usb in c.Win32_USBHub():
+                        device_id = usb.DeviceID
+                        device_name = usb.Name or "Unknown USB Device"
+                        new_devices[device_id] = device_name
+                except Exception as e:
+                    logger.error(f"WMI query error: {e}")
+                    time.sleep(5)
+                    continue
+
+                # Skip first scan - establish baseline without triggering events
+                if first_scan:
+                    logger.info(f"USB monitoring: Initial scan found {len(new_devices)} devices")
+                    current_devices = new_devices
+                    first_scan = False
+                else:
+                    # Detect newly plugged devices
+                    for device_id, device_name in new_devices.items():
+                        if device_id not in current_devices:
+                            # New device plugged in
+                            logger.info(f"USB device detected: {device_name} ({device_id})")
+                            self.handle_usb_event(device_name, device_id, "usb_connected")
+
+                    # Detect unplugged devices
+                    for device_id, device_name in current_devices.items():
+                        if device_id not in new_devices:
+                            # Device unplugged
+                            logger.info(f"USB device removed: {device_name} ({device_id})")
+                            self.handle_usb_event(device_name, device_id, "usb_disconnected")
+
+                    # Update current devices
+                    current_devices = new_devices
+
             except Exception as e:
-                logger.error(f"USB monitoring error: {e}")
+                logger.error(f"USB monitoring error: {e}", exc_info=True)
 
             time.sleep(5)
 
@@ -365,19 +404,27 @@ class DLPAgent:
         except Exception as e:
             logger.error(f"Error handling clipboard event: {e}")
 
-    def handle_usb_event(self, device_name: str, device_id: str):
-        """Handle USB device event"""
+    def handle_usb_event(self, device_name: str, device_id: str, event_subtype: str = "usb_connected"):
+        """Handle USB device event (plugged or unplugged)"""
         try:
+            # Determine description and action based on event type
+            if event_subtype == "usb_disconnected":
+                description = f"USB device disconnected: {device_name}"
+                action = "logged"
+            else:
+                description = f"USB device connected: {device_name}"
+                action = "logged"
+
             event_data = {
                 "event_id": str(uuid.uuid4()),
                 "event_type": "usb",
-                "event_subtype": "usb_connected",
+                "event_subtype": event_subtype,
                 "agent_id": self.agent_id,
                 "source_type": "agent",
                 "user_email": f"{os.getlogin()}@{socket.gethostname()}",
-                "description": f"USB device connected: {device_name}",
-                "severity": "medium",
-                "action": "logged",
+                "description": description,
+                "severity": "low",  # USB events are low priority
+                "action": action,
                 "details": {
                     "device_name": device_name,
                     "device_id": device_id
@@ -386,7 +433,10 @@ class DLPAgent:
             }
 
             self.send_event(event_data)
-            logger.info(f"USB device connected: {device_name}")
+            if event_subtype == "usb_disconnected":
+                logger.info(f"USB device disconnected: {device_name}")
+            else:
+                logger.info(f"USB device connected: {device_name}")
 
         except Exception as e:
             logger.error(f"Error handling USB event: {e}")
