@@ -222,7 +222,8 @@ class DLPAgent:
             }
 
             response = requests.post(
-                f"{self.server_url}/agents",
+                f"{self.server_url}/agents/",
+                allow_redirects=True
                 json=data,
                 timeout=10
             )
@@ -546,7 +547,7 @@ class DLPAgent:
         """Send event to server"""
         try:
             response = requests.post(
-                f"{self.server_url}/events",
+                f"{self.server_url}/events/",
                 json=event_data,
                 timeout=10
             )
