@@ -224,9 +224,9 @@ class DLPAgent:
 
             response = requests.post(
                 f"{self.server_url}/agents/",
-                allow_redirects=True
                 json=data,
-                timeout=10
+                timeout=10,
+                allow_redirects=True
             )
 
             if response.status_code in [200, 201]:
